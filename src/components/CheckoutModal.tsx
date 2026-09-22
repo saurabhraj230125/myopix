@@ -17,6 +17,10 @@ export default function CheckoutModal() {
     
     if (checkoutType === 'upi') {
       setStep('payment');
+      // Auto-trigger the UPI deep link for mobile devices
+      if (typeof window !== 'undefined' && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        window.location.href = `upi://pay?pa=7080626215@ptsbi&pn=mx.Myopix&am=${totalAmount}&cu=INR`;
+      }
     } else {
       // Simulate COD save
       setIsSubmitting(true);
@@ -143,6 +147,14 @@ export default function CheckoutModal() {
                        <span>UPI ID:</span>
                        <span className="font-bold font-mono tracking-tight">7080626215@ptsbi</span>
                     </div>
+
+                    {/* Mobile Deep Link */}
+                    <a 
+                      href={`upi://pay?pa=7080626215@ptsbi&pn=mx.Myopix&am=${totalAmount}&cu=INR`}
+                      className="w-full bg-green-600 text-white font-black py-4 rounded-xl text-lg hover:bg-green-700 transition-colors mb-4 flex items-center justify-center gap-2 shadow-lg shadow-green-600/30"
+                    >
+                      OPEN UPI APP NATIVELY
+                    </a>
 
                     <button 
                       onClick={handleUpiPayment}
