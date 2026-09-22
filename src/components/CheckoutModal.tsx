@@ -30,10 +30,10 @@ export default function CheckoutModal() {
     e.preventDefault();
     
     const formData = new FormData(e.currentTarget);
-    const data = Object.fromEntries(formData.entries());
+    const data: Record<string, any> = Object.fromEntries(formData.entries());
     data.cart = JSON.stringify(cartItems);
     data.total = totalAmount.toString();
-    data.paymentMethod = checkoutType;
+    data.paymentMethod = checkoutType || 'cod';
     setOrderData(data);
     
     if (checkoutType === 'upi') {
