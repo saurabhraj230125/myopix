@@ -9,11 +9,32 @@ export default function CheckoutModal() {
   const { isCheckoutModalOpen, closeCheckoutModal, checkoutType, cartItems } = useStore();
   const [step, setStep] = useState<'form' | 'payment' | 'success'>('form');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderData, setOrderData] = useState<Record<string, any> | null>(null);
 
   const totalAmount = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0) || 1999;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const sendOrderToMake = async (data: Record<string, any>) => {
+    const MAKE_WEBHOOK_URL = process.env.NEXT_PUBLIC_MAKE_WEBHOOK_URL || 'https://hook.eu1.make.com/64qrljh8irr6ophwq6ctfagreryym4d7';
+    try {
+      await fetch(MAKE_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      console.error('Error sending order to Make.com', error);
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    data.cart = JSON.stringify(cartItems);
+    data.total = totalAmount.toString();
+    data.paymentMethod = checkoutType;
+    setOrderData(data);
     
     if (checkoutType === 'upi') {
       setStep('payment');
@@ -22,21 +43,20 @@ export default function CheckoutModal() {
         window.location.href = `upi://pay?pa=7080626215@ptsbi&pn=mx.Myopix&am=${totalAmount}&cu=INR`;
       }
     } else {
-      // Simulate COD save
       setIsSubmitting(true);
-      setTimeout(() => {
+      sendOrderToMake(data).finally(() => {
         setIsSubmitting(false);
         setStep('success');
-      }, 1500);
+      });
     }
   };
 
   const handleUpiPayment = () => {
     setIsSubmitting(true);
-    setTimeout(() => {
+    sendOrderToMake(orderData || {}).finally(() => {
       setIsSubmitting(false);
       setStep('success');
-    }, 2000);
+    });
   };
 
   const handleClose = () => {
@@ -90,27 +110,31 @@ export default function CheckoutModal() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Full Name</label>
-                        <input required type="text" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" placeholder="John Doe" />
+                        <input name="fullName" required type="text" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" placeholder="John Doe" />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-sm font-semibold text-gray-700 mb-1">Email Address</label>
+                        <input name="email" required type="email" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" placeholder="john@example.com" />
                       </div>
                       <div className="col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Phone Number</label>
-                        <input required type="tel" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" placeholder="+91 9876543210" />
+                        <input name="phone" required type="tel" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" placeholder="+91 9876543210" />
                       </div>
                       <div className="col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">Full Address</label>
-                        <textarea required className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none resize-none h-24" placeholder="House No, Street, Landmark..."></textarea>
+                        <textarea name="address" required className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none resize-none h-24" placeholder="House No, Street, Landmark..."></textarea>
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">City</label>
-                        <input required type="text" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" />
+                        <input name="city" required type="text" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" />
                       </div>
                       <div>
                         <label className="block text-sm font-semibold text-gray-700 mb-1">PIN Code</label>
-                        <input required type="text" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" />
+                        <input name="pincode" required type="text" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" />
                       </div>
                       <div className="col-span-2">
                         <label className="block text-sm font-semibold text-gray-700 mb-1">State</label>
-                        <input required type="text" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" />
+                        <input name="state" required type="text" className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-black outline-none" />
                       </div>
                     </div>
                     
